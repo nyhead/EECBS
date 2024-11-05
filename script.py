@@ -24,6 +24,8 @@ def add_prefix_to_symbols():
                 class_matches = re.findall(class_pattern, content)
                 for class_name in class_matches:
                     if class_name.endswith(".h"):continue
+                    if any([class_name.startswith(x) for x in forbidden]):
+                        continue
                     prefixed_class_name = f"{prefix}{class_name}"
                     content = content.replace(f"class {class_name}", f"class {prefixed_class_name}")
                     update_source_files(class_name, prefixed_class_name)
