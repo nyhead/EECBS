@@ -1,80 +1,57 @@
 import os
 import re
 
-# Define the directory paths and prefix
-project_dir = "."
-src_dir = os.path.join(project_dir, 'src')
+# Define the directory path and prefix
+project_dir = "."  # Root directory of your project
 prefix = 'PREFIX_'  # Replace with your desired prefix
 
-# Regular expressions to detect symbols
-class_pattern = r'\bclass\s+([A-Za-z_][A-Za-z0-9_]*)'
-variable_pattern = r'\b([A-Za-z_][A-Za-z0-9_]*)\s+[A-Za-z_][A-Za-z0-9_]*\s*(?:=|;)'
-forbidden = ["class", "int", "auto", "bool", "string", "return", "size_t", "uint64_t", "for", "double", "clock_t"]
+# List of symbols you want to prefix
+conflicting_symbols = [
+    'Constraint',     # Example class name
+    'Conflict',  # Example variable name
+    'Path',
+    'heuristics_type'  # Example function name
+    # Add all the symbols you need to prefix
+]
 
-def add_prefix_to_symbols():
-    # Traverse header files and add prefix to detected classes and variables
-    for root, dirs, files in os.walk(project_dir):
+def prefix_symbols_in_files():
+    # Collect all .cpp and .h files in the project directory
+    source_files = []
+    for root, _, files in os.walk(project_dir):
         for file_name in files:
-            if file_name.endswith('.h'):
+            if file_name.endswith(('.cpp', '.h')):
                 file_path = os.path.join(root, file_name)
-                
-                with open(file_path, 'r') as file:
-                    content = file.read()
-                
-                # Temporarily replace #include lines to skip them during prefixing
-                includes = re.findall(r'#include\s+[<"].+[>"]', content)
-                content = re.sub(r'#include\s+[<"].+[>"]', "__INCLUDE__", content)
+                source_files.append(file_path)
+    
+    # For each symbol, replace it with the prefixed version in all files
+    for symbol in conflicting_symbols:
+        prefixed_symbol = f"{prefix}{symbol}"
+        # Regex pattern to match whole words only
+        word_pattern = rf'\b{re.escape(symbol)}\b'
+        
+        for file_path in source_files:
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+            
+            new_lines = []
+            modified = False
+            for line in lines:
+                # Skip lines that are #include directives
+                if re.match(r'^\s*#\s*include', line):
+                    new_lines.append(line)
+                    continue
 
-                # Find and replace class names
-                class_matches = re.findall(class_pattern, content)
-                for class_name in class_matches:
-                    if any(class_name.startswith(x) for x in forbidden):
-                        continue
-                    prefixed_class_name = f"{prefix}{class_name}"
-                    content = re.sub(rf'\bclass\s+{class_name}\b', f'class {prefixed_class_name}', content)
-                    update_source_files(class_name, prefixed_class_name)
-                
-                # Find and replace variable definitions (ignoring functions)
-                variable_matches = re.findall(variable_pattern, content)
-                for var_type in variable_matches:
-                    if any(var_type.startswith(x) for x in forbidden):
-                        continue
-                    prefixed_var_type = f"{prefix}{var_type}"
-                    content = re.sub(rf'\b{var_type}\b', prefixed_var_type, content)
-                    update_source_files(var_type, prefixed_var_type)
-                
-                # Restore #include lines
-                for include in includes:
-                    content = content.replace("__INCLUDE__", include, 1)
-                
+                # Replace symbol occurrences in other lines
+                new_line = re.sub(word_pattern, prefixed_symbol, line)
+                if new_line != line:
+                    modified = True
+                new_lines.append(new_line)
+            
+            if modified:
                 with open(file_path, 'w') as file:
-                    file.write(content)
-                print(f"Processed {file_path}")
+                    file.writelines(new_lines)
+                print(f"Prefixed '{symbol}' to '{prefixed_symbol}' in {file_path}")
 
-def update_source_files(original_symbol, prefixed_symbol):
-    # Traverse all source files to replace symbol usages with prefixed versions
-    for root, dirs, files in os.walk(src_dir):
-        for file_name in files:
-            if file_name.endswith('.cpp'):
-                file_path = os.path.join(root, file_name)
-                
-                with open(file_path, 'r') as file:
-                    content = file.read()
-                
-                # Temporarily replace #include lines to skip them during prefixing
-                includes = re.findall(r'#include\s+[<"].+[>"]', content)
-                content = re.sub(r'#include\s+[<"].+[>"]', "__INCLUDE__", content)
-                
-                # Replace occurrences of the symbol with the prefixed symbol
-                content = re.sub(rf'\b{original_symbol}\b', prefixed_symbol, content)
-                
-                # Restore #include lines
-                for include in includes:
-                    content = content.replace("__INCLUDE__", include, 1)
-                
-                with open(file_path, 'w') as file:
-                    file.write(content)
-                print(f"Updated {original_symbol} to {prefixed_symbol} in {file_path}")
-
-# Run the prefixing function
-add_prefix_to_symbols()
+# Run the function
+if __name__ == "__main__":
+    prefix_symbols_in_files()
