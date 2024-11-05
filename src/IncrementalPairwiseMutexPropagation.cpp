@@ -1,4 +1,4 @@
-#include "IncrementalPairwiseMutexPropagation.hpp"
+#include "IncrementalPairwiseMutexPropagation.h"
 
 #include <iostream>
 #include "ConstraintPropagation.h"
