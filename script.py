@@ -9,7 +9,7 @@ prefix = 'PREFIX_'  # Replace with your desired prefix
 # Regular expressions to detect symbols
 class_pattern = r'\bclass\s+([A-Za-z_][A-Za-z0-9_]*)'
 variable_pattern = r'\b([A-Za-z_][A-Za-z0-9_]*)\s+[A-Za-z_][A-Za-z0-9_]*\s*(?:=|;)'
-forbidden = ["int", "auto", "bool", "string", "return", "size_t", "uint64_t", "for ", "double", "clock_t"]
+forbidden = ["class","int", "auto", "bool", "string", "return", "size_t", "uint64_t", "for", "double", "clock_t"]
 def add_prefix_to_symbols():
     # Traverse header files and add prefix to detected classes and variables
     for root, dirs, files in os.walk(project_dir):
@@ -23,6 +23,7 @@ def add_prefix_to_symbols():
                 # Find and replace class names
                 class_matches = re.findall(class_pattern, content)
                 for class_name in class_matches:
+                    if class_name.endswith(".h"):continue
                     prefixed_class_name = f"{prefix}{class_name}"
                     content = content.replace(f"class {class_name}", f"class {prefixed_class_name}")
                     update_source_files(class_name, prefixed_class_name)
@@ -31,6 +32,7 @@ def add_prefix_to_symbols():
                 variable_matches = re.findall(variable_pattern, content)
                 
                 for var_type in variable_matches:
+                    if var_type.endswith(".h"):continue
                     if any([var_type.startswith(x) for x in forbidden]):
                         continue
                     prefixed_var_type = f"{prefix}{var_type}"
