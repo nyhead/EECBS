@@ -1,4 +1,4 @@
-#include "IncrementalPairwiseMutexPropagation.hpp"
+#include "IncrementalPairwiseMutexPropagation.h"
 #include "MDD.h"
 
 class MutexReasoning{
