@@ -18,7 +18,12 @@ def add_prefix_to_symbols():
                 file_path = os.path.join(root, file_name)
                 
                 with open(file_path, 'r') as file:
-                    content = file.read()
+                    content = ''
+                    for line in file:
+                        if re.search(r'#include\s*".*\.h"', line):
+                            continue
+                        content+=line
+                    
                 
                 # Find and replace class names
                 class_matches = re.findall(class_pattern, content)
@@ -53,7 +58,11 @@ def update_source_files(original_symbol, prefixed_symbol):
                 file_path = os.path.join(root, file_name)
                 
                 with open(file_path, 'r') as file:
-                    content = file.read()
+                    content = ''
+                    for line in file:
+                        if re.search(r'#include\s*".*\.h"', line):
+                            continue
+                        content+=line
                 
                 # Replace occurrences of the symbol with the prefixed symbol
                 content = re.sub(rf'\b{original_symbol}\b', prefixed_symbol, content)
